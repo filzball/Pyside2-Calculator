@@ -1,9 +1,4 @@
-<<<<<<< HEAD
 from PySide2.QtWidgets import QToolButton, QSizePolicy
-=======
-import sys
-from PySide2.QtWidgets import QToolButton, QSizePolicy, QApplication
->>>>>>> d64e29ee0441510161167880cc6dc6837766cf38
 from PySide2.QtCore import QSize
 
 
@@ -20,13 +15,3 @@ class Button(QToolButton):
         hint = QSize(width, height)
         print(hint)
         return hint
-<<<<<<< HEAD
-=======
-
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    b = Button('test')
-    b.sizeHint()
-    b.show()
->>>>>>> d64e29ee0441510161167880cc6dc6837766cf38
