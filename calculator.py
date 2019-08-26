@@ -1,4 +1,5 @@
 import sys
+from math import sqrt
 from PySide2.QtWidgets import (QWidget, QGridLayout, QApplication,
                                QLineEdit, QLayout)
 from PySide2.QtCore import Slot, Qt
@@ -80,7 +81,6 @@ class Calculator(QWidget):
                 row = int(((9-i)) / 3) + 2
                 col = ((i - 1) % 3) + 1
                 self.layout.addWidget(self.num_buttons[i], row, col)
-                print(i, row, col)
             else:
                 self.layout.addWidget(self.num_buttons[0], 5, 2)
 
@@ -115,7 +115,24 @@ class Calculator(QWidget):
 
     @Slot()
     def unary_operator_clicked(self):
-        pass
+        button = self.sender()
+        operator = button.text()
+        operand = float(self.display.text())
+        result = 0.0
+        if operator == '\u221a':
+            if operand < 0:
+                self.abort_operation()
+            result = sqrt(operand)
+            self.display.setText(str(result))
+        if operator == 'x\u207b\u2071':
+            if operand == 0:
+                self.abort_operation()
+            result = float(1 / operand)
+            self.display.setText(str(result))
+        if operator == 'x\u00b2':
+            result = operand**2
+            self.display.setText(str(result))
+        self.waiting_for_operand = True
 
     @Slot()
     def multiplicative_clicked(self):
@@ -135,7 +152,11 @@ class Calculator(QWidget):
 
     @Slot()
     def change_sign_clicked(self):
-        pass
+        operand = self.display.text()
+        if '-' not in operand:
+            self.display.setText('-' + operand)
+        else:
+            self.display.setText(operand[1:])
 
     @Slot()
     def backspace_clicked(self):
@@ -161,6 +182,8 @@ class Calculator(QWidget):
         self.waiting_for_operand = True
         self.sum_so_far = 0
         self.factor_so_far = 0
+        self.pending_additive_operator = ''
+        self.pending_multiplicative_operator = ''
 
     @Slot()
     def clear_memory(self):
@@ -168,21 +191,17 @@ class Calculator(QWidget):
 
     @Slot()
     def read_memory(self):
-        if self.waiting_for_operand:
-            self.display.clear()
         self.waiting_for_operand = True
         self.display.setText(str(self.sum_in_memory))
 
     @Slot()
     def set_memory(self):
-        if self.waiting_for_operand:
-            return
+        # self.equal_clicked()
         self.sum_in_memory = float(self.display.text())
 
     @Slot()
     def add_to_memory(self):
-        if self.waiting_for_operand:
-            return
+        # self.equal_clicked()
         self.sum_in_memory += float(self.display.text())
 
     def create_button(self, text, slot):
@@ -200,6 +219,5 @@ class Calculator(QWidget):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     t = Calculator()
-    # t.resize(300, 300)
     t.show()
     sys.exit(app.exec_())
