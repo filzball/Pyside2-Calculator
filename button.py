@@ -13,5 +13,5 @@ class Button(QToolButton):
         width = size.height() + 20
         height = max(size.width(), size.height())
         hint = QSize(width, height)
-        print(hint)
+        # print(hint)
         return hint
