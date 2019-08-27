@@ -10,8 +10,8 @@ class Calculator(QWidget):
     def __init__(self):
         super(Calculator, self).__init__()
         self.sum_in_memory = 0
-        self.sum_so_far = 0
-        self.factor_so_far = 0
+        self.sum_so_far = 0.0
+        self.factor_so_far = 0.0
         self.pending_additive_operator = ''  # last + or - operator
         self.pending_multiplicative_operator = ''  # last x or / operator
         self.waiting_for_operand = True
@@ -102,6 +102,7 @@ class Calculator(QWidget):
     @Slot()
     def digit_clicked(self):
         number = int(self.sender().text())
+        # print(self.sender(), self.sender.text())
         if number == 0 and self.display.text() == 0:
             return
         if self.waiting_for_operand:
@@ -111,36 +112,104 @@ class Calculator(QWidget):
 
     @Slot()
     def additive_clicked(self):
-        pass
+        text = self.display.text()
+        if text[-1].isdigit():
+            clicked_operator = self.sender().text()
+            operand = float(text)
+            if self.pending_multiplicative_operator != '':
+                if not self.calculate(operand,
+                                      self.pending_multiplicative_operator):
+                    self.abort_operation('zero_div')
+                    return
+                self.display.setText(str(self.factor_so_far))
+                operand = self.factor_so_far
+                self.factor_so_far = 0.0
+                self.pending_multiplicative_operator = ''
+            if self.pending_additive_operator != '':
+                if not self.calculate(operand,
+                                      self.pending_additive_operator):
+                    self.abort_operation('zero_div')
+                    return
+                self.display.setText(str(self.sum_so_far))
+            else:
+                self.sum_so_far = operand
+            self.pending_additive_operator = clicked_operator
+            self.waiting_for_operand = True
+        else:
+            self.clear_all()
 
     @Slot()
     def unary_operator_clicked(self):
-        button = self.sender()
-        operator = button.text()
-        operand = float(self.display.text())
-        result = 0.0
-        if operator == '\u221a':
-            if operand < 0:
-                self.abort_operation()
-            result = sqrt(operand)
-            self.display.setText(str(result))
-        if operator == 'x\u207b\u2071':
-            if operand == 0:
-                self.abort_operation()
-            result = float(1 / operand)
-            self.display.setText(str(result))
-        if operator == 'x\u00b2':
-            result = operand**2
-            self.display.setText(str(result))
-        self.waiting_for_operand = True
+        text = self.display.text()
+        if text[-1].isdigit():
+            button = self.sender()
+            operator = button.text()
+            operand = float(text)
+            result = 0.0
+            if operator == '\u221a':
+                if operand < 0:
+                    self.abort_operation('sqrt')
+                else:
+                    result = sqrt(operand)
+                    self.display.setText(str(result))
+            if operator == 'x\u207b\u2071':
+                if operand == 0:
+                    self.abort_operation('zero_div')
+                else:
+                    result = float(1 / operand)
+                    self.display.setText(str(result))
+            if operator == 'x\u00b2':
+                result = operand**2
+                self.display.setText(str(result))
+            self.waiting_for_operand = True
+        else:
+            self.clear_all()
 
     @Slot()
     def multiplicative_clicked(self):
-        pass
+        text = self.display.text()
+        if text[-1].isdigit():
+            clicked_operator = self.sender().text()
+            operand = float(text)
+            if self.pending_multiplicative_operator != '':
+                if not self.calculate(operand,
+                                      self.pending_multiplicative_operator):
+                    self.abort_operation('zero_div')
+                    return
+                self.display.setText(str(self.factor_so_far))
+            else:
+                self.factor_so_far = operand
+            self.pending_multiplicative_operator = clicked_operator
+            self.waiting_for_operand = True
+        else:
+            self.clear_all()
 
     @Slot()
     def equal_clicked(self):
-        pass
+        text = self.display.text()
+        if text[-1].isdigit():
+            operand = float(text)
+            if self.pending_multiplicative_operator != '':
+                if not self.calculate(operand,
+                                      self.pending_multiplicative_operator):
+                    self.abort_operation('zero_div')
+                    return
+                operand = self.factor_so_far
+                self.factor_so_far = 0.0
+                self.pending_multiplicative_operator = ''
+            if self.pending_additive_operator != '':
+                if not self.calculate(operand,
+                                      self.pending_additive_operator):
+                    self.abort_operation('zero_div')
+                    return
+                self.pending_additive_operator = ''
+            else:
+                self.sum_so_far = operand
+            self.display.setText(str(self.sum_so_far))
+            self.sum_so_far = 0.0
+            self.waiting_for_operand = True
+        else:
+            self.clear_all()
 
     @Slot()
     def point_clicked(self):
@@ -196,12 +265,12 @@ class Calculator(QWidget):
 
     @Slot()
     def set_memory(self):
-        # self.equal_clicked()
+        self.equal_clicked()
         self.sum_in_memory = float(self.display.text())
 
     @Slot()
     def add_to_memory(self):
-        # self.equal_clicked()
+        self.equal_clicked()
         self.sum_in_memory += float(self.display.text())
 
     def create_button(self, text, slot):
@@ -209,11 +278,28 @@ class Calculator(QWidget):
         self.new_button.clicked.connect(slot)
         return self.new_button
 
-    def abort_operation(self):
-        pass
+    def abort_operation(self, err=None):
+        self.clear_all()
+        if err is None:
+            self.display.setText('Error!')
+        if err == 'sqrt':
+            self.display.setText('Undefined!')
+        if err == 'zero_div':
+            self.display.setText('Zero division')
 
-    def calculate(self):
-        pass
+    # calculates a binary operation returns True if possible else False
+    def calculate(self, right_operand, pending_operator):
+        if pending_operator == '+':
+            self.sum_so_far += right_operand
+        if pending_operator == '-':
+            self.sum_so_far -= right_operand
+        if pending_operator == 'x':
+            self.factor_so_far *= right_operand
+        if pending_operator == '/':
+            if right_operand == 0:
+                return False
+            self.factor_so_far /= right_operand
+        return True
 
 
 if __name__ == '__main__':
