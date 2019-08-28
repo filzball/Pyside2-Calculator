@@ -3,6 +3,7 @@ from math import sqrt
 from PySide2.QtWidgets import (QWidget, QGridLayout, QApplication,
                                QLineEdit, QLayout)
 from PySide2.QtCore import Slot, Qt
+from PySide2.QtGui import QIcon
 from button import Button
 
 
@@ -31,18 +32,24 @@ class Calculator(QWidget):
         for i in range(10):
             button = self.create_button(str(i), self.digit_clicked)
             self.num_buttons.append(button)
+            button.setShortcut(str(i))
         self.point_button = self.create_button('.',
                                                self.point_clicked)
+        self.point_button.setShortcut('.')
         self.sign_button = self.create_button('\u00b1',
                                               self.change_sign_clicked)
         self.plus_button = self.create_button('+',
                                               self.additive_clicked)
+        self.plus_button.setShortcut('+')
         self.minus_button = self.create_button('-',
                                                self.additive_clicked)
+        self.minus_button.setShortcut('-')
         self.multiply_button = self.create_button('x',
                                                   self.multiplicative_clicked)
+        self.multiply_button.setShortcut('x')
         self.divide_button = self.create_button('/',
                                                 self.multiplicative_clicked)
+        self.divide_button.setShortcut('/')
         self.root_button = self.create_button('\u221a',
                                               self.unary_operator_clicked)
         self.square_button = self.create_button('x\u00b2',
@@ -51,8 +58,10 @@ class Calculator(QWidget):
                                                    self.unary_operator_clicked)
         self.equal_button = self.create_button('=',
                                                self.equal_clicked)
+        self.equal_button.setShortcut('Return')
         self.back_button = self.create_button('\u2190',
                                               self.backspace_clicked)
+        self.back_button.setShortcut('Backspace')
         self.clear_button = self.create_button('Clear',
                                                self.clear)
         self.clear_all_button = self.create_button('Clear All',
@@ -98,6 +107,10 @@ class Calculator(QWidget):
         self.layout.addWidget(self.equal_button, 5, 5)
         self.layout.addWidget(self.sign_button, 5, 1)
         self.layout.addWidget(self.point_button, 5, 3)
+
+        self.setWindowTitle('Calculator')
+        icon = QIcon('calc_icon.png')
+        self.setWindowIcon(icon)
 
     @Slot()
     def digit_clicked(self):
