@@ -8,7 +8,7 @@ from button import Button
 
 
 class Calculator(QWidget):
-    def __init__(self):
+    def __init__(self, icon):
         super(Calculator, self).__init__()
         self.sum_in_memory = 0
         self.sum_so_far = 0.0
@@ -109,8 +109,9 @@ class Calculator(QWidget):
         self.layout.addWidget(self.point_button, 5, 3)
 
         self.setWindowTitle('Calculator')
-        icon = QIcon('calc_icon.png')
-        self.setWindowIcon(icon)
+        window_icon = QIcon(icon)
+        self.setWindowIcon(window_icon)
+        print(icon)
 
     @Slot()
     def digit_clicked(self):
