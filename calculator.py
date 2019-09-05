@@ -1,7 +1,7 @@
 import sys
 from math import sqrt
 from PySide2.QtWidgets import (QWidget, QGridLayout, QApplication,
-                               QLineEdit, QLayout)
+                               QLineEdit, QLayout, QLabel)
 from PySide2.QtCore import Slot, Qt
 from PySide2.QtGui import QIcon
 from button import Button
@@ -18,6 +18,12 @@ class Calculator(QWidget):
         self.waiting_for_operand = True
 
         self.num_buttons = []
+
+        self.label = QLabel('', self)
+        self.label.setAlignment(Qt.AlignRight)
+        font = self.label.font()
+        font.setPointSize(font.pointSize() + 4)
+        self.label.setFont(font)
 
         # create the display
         self.display = QLineEdit('0', self)
@@ -54,7 +60,7 @@ class Calculator(QWidget):
                                               self.unary_operator_clicked)
         self.square_button = self.create_button('x\u00b2',
                                                 self.unary_operator_clicked)
-        self.reciproce_button = self.create_button('x\u207b\u2071',
+        self.reciproce_button = self.create_button('1/x',
                                                    self.unary_operator_clicked)
         self.equal_button = self.create_button('=',
                                                self.equal_clicked)
@@ -80,33 +86,34 @@ class Calculator(QWidget):
         self.setLayout(self.layout)
 
         # put the buttons into the setLayout
-        self.layout.addWidget(self.display, 0, 0, 1, 6)
-        self.layout.addWidget(self.back_button, 1, 0, 1, 2)
-        self.layout.addWidget(self.clear_button, 1, 2, 1, 2)
-        self.layout.addWidget(self.clear_all_button, 1, 4, 1, 2)
+        self.layout.addWidget(self.label, 0, 0, 1, 6)
+        self.layout.addWidget(self.display, 1, 0, 1, 6)
+        self.layout.addWidget(self.back_button, 2, 0, 1, 2)
+        self.layout.addWidget(self.clear_button, 2, 2, 1, 2)
+        self.layout.addWidget(self.clear_all_button, 2, 4, 1, 2)
 
         for i in range(len(self.num_buttons)):
             if i > 0:
-                row = int(((9-i)) / 3) + 2
+                row = int(((9-i)) / 3) + 3
                 col = ((i - 1) % 3) + 1
                 self.layout.addWidget(self.num_buttons[i], row, col)
             else:
-                self.layout.addWidget(self.num_buttons[0], 5, 2)
+                self.layout.addWidget(self.num_buttons[0], 6, 2)
 
-        self.layout.addWidget(self.memory_clear, 2, 0)
-        self.layout.addWidget(self.memory_save, 3, 0)
-        self.layout.addWidget(self.memory_read, 4, 0)
-        self.layout.addWidget(self.memory_add, 5, 0)
-        self.layout.addWidget(self.divide_button, 2, 4)
-        self.layout.addWidget(self.multiply_button, 3, 4)
-        self.layout.addWidget(self.minus_button, 4, 4)
-        self.layout.addWidget(self.plus_button, 5, 4)
-        self.layout.addWidget(self.root_button, 2, 5)
-        self.layout.addWidget(self.square_button, 3, 5)
-        self.layout.addWidget(self.reciproce_button, 4, 5)
-        self.layout.addWidget(self.equal_button, 5, 5)
-        self.layout.addWidget(self.sign_button, 5, 1)
-        self.layout.addWidget(self.point_button, 5, 3)
+        self.layout.addWidget(self.memory_clear, 3, 0)
+        self.layout.addWidget(self.memory_save, 4, 0)
+        self.layout.addWidget(self.memory_read, 5, 0)
+        self.layout.addWidget(self.memory_add, 6, 0)
+        self.layout.addWidget(self.divide_button, 3, 4)
+        self.layout.addWidget(self.multiply_button, 4, 4)
+        self.layout.addWidget(self.minus_button, 5, 4)
+        self.layout.addWidget(self.plus_button, 6, 4)
+        self.layout.addWidget(self.root_button, 3, 5)
+        self.layout.addWidget(self.square_button, 4, 5)
+        self.layout.addWidget(self.reciproce_button, 5, 5)
+        self.layout.addWidget(self.equal_button, 6, 5)
+        self.layout.addWidget(self.sign_button, 6, 1)
+        self.layout.addWidget(self.point_button, 6, 3)
 
         self.setWindowTitle('Calculator')
         window_icon = QIcon(icon)
@@ -129,6 +136,7 @@ class Calculator(QWidget):
         text = self.display.text()
         if text[-1].isdigit():
             clicked_operator = self.sender().text()
+            self.update_label(text, clicked_operator)
             operand = float(text)
             if self.pending_multiplicative_operator != '':
                 if not self.calculate(operand,
@@ -151,6 +159,7 @@ class Calculator(QWidget):
             self.waiting_for_operand = True
         else:
             self.clear_all()
+            self.update_label()
 
     @Slot()
     def unary_operator_clicked(self):
@@ -166,18 +175,22 @@ class Calculator(QWidget):
                 else:
                     result = sqrt(operand)
                     self.display.setText(str(result))
-            if operator == 'x\u207b\u2071':
+                    self.update_label(operator, text, '=', str(result))
+            if operator == '1/x':
                 if operand == 0:
                     self.abort_operation('zero_div')
                 else:
                     result = float(1 / operand)
                     self.display.setText(str(result))
+                    self.update_label(f'1/{text}', '=', str(result))
             if operator == 'x\u00b2':
                 result = operand**2
                 self.display.setText(str(result))
+                self.update_label(text, '\u00b2', '=', str(result))
             self.waiting_for_operand = True
         else:
             self.clear_all()
+            self.update_label()
 
     @Slot()
     def multiplicative_clicked(self):
@@ -185,6 +198,7 @@ class Calculator(QWidget):
         if text[-1].isdigit():
             clicked_operator = self.sender().text()
             operand = float(text)
+            self.update_label(text, clicked_operator)
             if self.pending_multiplicative_operator != '':
                 if not self.calculate(operand,
                                       self.pending_multiplicative_operator):
@@ -197,12 +211,14 @@ class Calculator(QWidget):
             self.waiting_for_operand = True
         else:
             self.clear_all()
+            self.update_label()
 
     @Slot()
     def equal_clicked(self):
         text = self.display.text()
         if text[-1].isdigit():
             operand = float(text)
+            self.update_label(text)
             if self.pending_multiplicative_operator != '':
                 if not self.calculate(operand,
                                       self.pending_multiplicative_operator):
@@ -220,6 +236,7 @@ class Calculator(QWidget):
             else:
                 self.sum_so_far = operand
             self.display.setText(str(self.sum_so_far))
+            self.update_label('=', self.sum_so_far)
             self.sum_so_far = 0.0
             self.waiting_for_operand = True
         else:
@@ -267,6 +284,7 @@ class Calculator(QWidget):
         self.factor_so_far = 0
         self.pending_additive_operator = ''
         self.pending_multiplicative_operator = ''
+        self.update_label()
 
     @Slot()
     def clear_memory(self):
@@ -314,6 +332,21 @@ class Calculator(QWidget):
                 return False
             self.factor_so_far /= right_operand
         return True
+
+    def update_label(self, *args):
+        if '=' in self.label.text():
+            self.label.setText('')
+        if args:
+            for i in args:
+                self.label.setText(self.label.text() + str(i))
+        else:
+            self.label.setText('')
+
+    def round_float(self, f):
+        if len(str(f)) > 10:
+            res = round(f, 8)
+            return res
+        return f
 
 
 if __name__ == '__main__':
